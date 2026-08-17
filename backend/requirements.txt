@@ -1,0 +1,30 @@
+# NIRNAY Backend Dependencies
+# AI-based Traffic Risk Heatmap & Police Deployment Decision-Support System
+
+# Web framework
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.6
+
+# Database
+sqlalchemy>=2.0.35
+aiosqlite>=0.20.0
+
+# Data validation
+pydantic>=2.9.2
+pydantic-settings>=2.5.2
+
+# Authentication
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+
+# Data processing
+pandas>=2.2.3
+numpy>=2.1.1
+
+# Environment & utilities
+python-dotenv>=1.0.1
+python-multipart>=0.0.12
+email-validator>=2.0.0
+
+# CORS
+# (included in fastapi / starlette)

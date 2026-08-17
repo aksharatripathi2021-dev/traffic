@@ -1,0 +1,22 @@
+# Python / FastAPI
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+.env
+
+# Database & SQLite
+*.db
+*.sqlite3
+
+# Uploads / Temp
+uploads/*
+!uploads/.gitkeep
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
