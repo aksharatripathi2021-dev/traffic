@@ -26,5 +26,8 @@ python-dotenv>=1.0.1
 python-multipart>=0.0.12
 email-validator>=2.0.0
 
+# Production server
+gunicorn>=22.0.0
+
 # CORS
 # (included in fastapi / starlette)
