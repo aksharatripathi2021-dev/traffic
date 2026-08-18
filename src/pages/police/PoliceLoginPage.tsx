@@ -1,27 +1,51 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ShieldCheck, UserCheck, ArrowRight, User } from 'lucide-react';
+import { ShieldCheck, ArrowRight, User, Lock } from 'lucide-react';
 import { Button } from '../../components/common/Button';
+import { API_BASE } from '../../utils/api';
 
 export const PoliceLoginPage: React.FC = () => {
-  const [officerName, setOfficerName] = useState('Inspector Priya Deshmukh');
-  const [badgeNumber, setBadgeNumber] = useState('NGP-0054');
+  const [username, setUsername] = useState('demo_police');
+  const [password, setPassword] = useState('nirnay2026');
   const [errorMsg, setErrorMsg] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!officerName.trim() || !badgeNumber.trim()) {
-      setErrorMsg('Please enter both Police Officer Name and Police ID to proceed.');
+    if (!username.trim() || !password.trim()) {
+      setErrorMsg('Please enter both Username and Password to proceed.');
       return;
     }
 
     setErrorMsg('');
-    localStorage.setItem('nirnay_user_role', 'police');
-    localStorage.setItem('nirnay_police_name', officerName.trim());
-    localStorage.setItem('nirnay_police_badge', badgeNumber.trim());
-    navigate('/police/dashboard');
+    setLoading(true);
+
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username.trim(), password: password.trim() }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.detail || 'Invalid username or password.');
+      }
+
+      const data = await res.json();
+      localStorage.setItem('nirnay_token', data.access_token);
+      localStorage.setItem('nirnay_user_role', 'police');
+      localStorage.setItem('nirnay_police_name', data.username || 'Inspector Nagpur');
+      localStorage.setItem('nirnay_police_badge', 'NGP-0054');
+      
+      navigate('/police/dashboard');
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Connection to backend failed.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -46,30 +70,30 @@ export const PoliceLoginPage: React.FC = () => {
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-400 mb-1.5 flex items-center gap-1.5">
-              <UserCheck className="w-3.5 h-3.5 text-amber-400" />
-              <span>Police Officer Name</span>
+              <User className="w-3.5 h-3.5 text-amber-400" />
+              <span>Username</span>
             </label>
             <input
               type="text"
               required
-              value={officerName}
-              onChange={(e) => setOfficerName(e.target.value)}
-              placeholder="e.g. Inspector Priya Deshmukh"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="e.g. demo_police"
               className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-amber-500 transition-colors"
             />
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-slate-400 mb-1.5 flex items-center gap-1.5">
-              <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
-              <span>Police ID / Badge Number</span>
+              <Lock className="w-3.5 h-3.5 text-amber-400" />
+              <span>Password</span>
             </label>
             <input
-              type="text"
+              type="password"
               required
-              value={badgeNumber}
-              onChange={(e) => setBadgeNumber(e.target.value)}
-              placeholder="e.g. NGP-0054"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
               className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-amber-500 transition-colors"
             />
           </div>
@@ -80,8 +104,9 @@ export const PoliceLoginPage: React.FC = () => {
             size="lg"
             className="w-full shadow-lg shadow-amber-600/20 font-bold"
             rightIcon={<ArrowRight className="w-4 h-4" />}
+            disabled={loading}
           >
-            CONTINUE AS POLICE
+            {loading ? 'Authenticating...' : 'CONTINUE AS POLICE'}
           </Button>
         </form>
 

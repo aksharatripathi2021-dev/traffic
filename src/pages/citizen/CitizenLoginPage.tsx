@@ -1,32 +1,52 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { User, Mail, ArrowRight, ShieldCheck } from 'lucide-react';
+import { User, ShieldCheck, ArrowRight, Lock } from 'lucide-react';
 import { Button } from '../../components/common/Button';
+import { API_BASE } from '../../utils/api';
 
 export const CitizenLoginPage: React.FC = () => {
-  const [fullName, setFullName] = useState('Aniket Deshmukh');
-  const [emailId, setEmailId] = useState('aniket.deshmukh@nagpur.gov.in');
+  const [username, setUsername] = useState('demo_citizen');
+  const [password, setPassword] = useState('citizen123');
   const [errorMsg, setErrorMsg] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!fullName.trim() || !emailId.trim()) {
-      setErrorMsg('Please enter both Full Name and Email ID to proceed.');
-      return;
-    }
-
-    if (!emailId.includes('@')) {
-      setErrorMsg('Please enter a valid Email ID address.');
+    if (!username.trim() || !password.trim()) {
+      setErrorMsg('Please enter both Username and Password to proceed.');
       return;
     }
 
     setErrorMsg('');
-    localStorage.setItem('nirnay_user_role', 'citizen');
-    localStorage.setItem('nirnay_citizen_name', fullName.trim());
-    localStorage.setItem('nirnay_citizen_email', emailId.trim());
-    navigate('/citizen/dashboard');
+    setLoading(false);
+
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_BASE}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username.trim(), password: password.trim() }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.detail || 'Invalid username or password.');
+      }
+
+      const data = await res.json();
+      localStorage.setItem('nirnay_token', data.access_token);
+      localStorage.setItem('nirnay_user_role', 'citizen');
+      localStorage.setItem('nirnay_citizen_name', data.username || 'Rahul Citizen');
+      localStorage.setItem('nirnay_citizen_email', 'demo.citizen@nirnay.dev');
+      
+      navigate('/citizen/dashboard');
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Connection to backend failed.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -38,7 +58,7 @@ export const CitizenLoginPage: React.FC = () => {
           </div>
           <h2 className="text-2xl font-extrabold text-white tracking-tight">Citizen Portal Sign In</h2>
           <p className="text-xs text-slate-400 leading-relaxed">
-            Enter your details to access Nagpur live traffic risk map and incident reporting system.
+            Enter your credentials to access Nagpur live traffic risk map and incident reporting system.
           </p>
         </div>
 
@@ -52,29 +72,29 @@ export const CitizenLoginPage: React.FC = () => {
           <div>
             <label className="block text-xs font-semibold text-slate-400 mb-1.5 flex items-center gap-1.5">
               <User className="w-3.5 h-3.5 text-blue-400" />
-              <span>Full Name</span>
+              <span>Username</span>
             </label>
             <input
               type="text"
               required
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder="e.g. Aniket Deshmukh"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="e.g. demo_citizen"
               className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-blue-500 transition-colors"
             />
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-slate-400 mb-1.5 flex items-center gap-1.5">
-              <Mail className="w-3.5 h-3.5 text-blue-400" />
-              <span>Email ID</span>
+              <Lock className="w-3.5 h-3.5 text-blue-400" />
+              <span>Password</span>
             </label>
             <input
-              type="email"
+              type="password"
               required
-              value={emailId}
-              onChange={(e) => setEmailId(e.target.value)}
-              placeholder="e.g. aniket@example.com"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
               className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-sm text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-blue-500 transition-colors"
             />
           </div>
@@ -85,8 +105,9 @@ export const CitizenLoginPage: React.FC = () => {
             size="lg"
             className="w-full shadow-lg shadow-blue-600/20 font-bold"
             rightIcon={<ArrowRight className="w-4 h-4" />}
+            disabled={loading}
           >
-            Continue as Citizen
+            {loading ? 'Signing in...' : 'Continue as Citizen'}
           </Button>
         </form>
 

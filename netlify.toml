@@ -3,6 +3,5 @@
 # ─────────────────────────────────────────────
 
 [build]
-  # The frontend is plain HTML/CSS/JS — no build step required
-  publish = "frontend/"
-  command = "echo 'No build needed — static HTML/CSS/JS frontend'"
+  publish = "dist"
+  command = "npm run build"
