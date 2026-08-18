@@ -337,10 +337,12 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
         })}
 
         {/* Police Patrol Markers */}
-        {officers.map((officer) => {
+        {officers.map((officer, index) => {
           const zoneMatch = zones.find((z) => z.zoneId === officer.assignedZoneId);
-          const lat = zoneMatch ? zoneMatch.latitude + 0.003 : center[0] + (Math.random() - 0.5) * 0.02;
-          const lng = zoneMatch ? zoneMatch.longitude - 0.003 : center[1] + (Math.random() - 0.5) * 0.02;
+          const angle = (index * 1.4) + 0.5;
+          const dist = 0.0042;
+          const lat = zoneMatch ? zoneMatch.latitude - Math.sin(angle) * dist : center[0] + Math.sin(index + 1) * 0.015;
+          const lng = zoneMatch ? zoneMatch.longitude - Math.cos(angle) * dist : center[1] + Math.cos(index + 1) * 0.015;
 
           return (
             <Marker key={`off-${officer.officerId}`} position={[lat, lng]} icon={createPoliceIcon()}>
@@ -358,21 +360,29 @@ export const LeafletMap: React.FC<LeafletMapProps> = ({
         })}
 
         {/* Citizen Incident Hazard Markers */}
-        {reports.map((report) => (
-          <Marker
-            key={`rep-${report.reportId}`}
-            position={[report.latitude, report.longitude]}
-            icon={createReportIcon()}
-          >
-            <Popup>
-              <div className="p-1.5 text-xs text-slate-900 max-w-[200px]">
-                <div className="font-bold text-red-600 mb-0.5">{report.incidentType}</div>
-                <p className="text-slate-600 line-clamp-2">{report.description}</p>
-                <div className="mt-1 text-[10px] text-slate-500">{report.location} • {report.time}</div>
-              </div>
-            </Popup>
-          </Marker>
-        ))}
+        {reports.map((report, index) => {
+          const zoneNear = zones.find(z => Math.abs(z.latitude - report.latitude) < 0.002 && Math.abs(z.longitude - report.longitude) < 0.002);
+          const angle = (index * 1.8) + 1.2;
+          const dist = 0.0038;
+          const lat = zoneNear ? report.latitude + Math.sin(angle) * dist : report.latitude;
+          const lng = zoneNear ? report.longitude + Math.cos(angle) * dist : report.longitude;
+
+          return (
+            <Marker
+              key={`rep-${report.reportId}`}
+              position={[lat, lng]}
+              icon={createReportIcon()}
+            >
+              <Popup>
+                <div className="p-1.5 text-xs text-slate-900 max-w-[200px]">
+                  <div className="font-bold text-red-600 mb-0.5">{report.incidentType}</div>
+                  <p className="text-slate-600 line-clamp-2">{report.description}</p>
+                  <div className="mt-1 text-[10px] text-slate-500">{report.location} • {report.time}</div>
+                </div>
+              </Popup>
+            </Marker>
+          );
+        })}
       </MapContainer>
     </div>
   );

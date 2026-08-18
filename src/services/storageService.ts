@@ -4,9 +4,9 @@ import { INITIAL_OFFICERS } from '../data/mockOfficers';
 import { INITIAL_REPORTS } from '../data/mockReports';
 
 const STORAGE_KEYS = {
-  ZONES: 'nirnay_zones_v1',
-  OFFICERS: 'nirnay_officers_v1',
-  REPORTS: 'nirnay_reports_v1'
+  ZONES: 'nirnay_zones_v2',
+  OFFICERS: 'nirnay_officers_v2',
+  REPORTS: 'nirnay_reports_v2'
 };
 
 export const storageService = {
