@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NIRNAY – AI Traffic Risk Heatmap & Police Deployment | Nagpur City</title>
+  <meta name="description" content="NIRNAY is an AI-based traffic risk heatmap and police deployment decision-support system for Nagpur City. View real-time risk scores, report incidents, and manage police deployment." />
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- App CSS -->
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- Favicon (emoji-based inline SVG) -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚦</text></svg>" />
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ═══ HEADER ═══════════════════════════════════════ -->
+  <header class="app-header">
+    <div class="header-left">
+      <div class="app-logo">
+        <div class="app-logo-icon">N</div>
+        <div>
+          <div class="app-logo-text">NIRNAY</div>
+          <div class="app-logo-subtitle">Traffic Risk Intelligence · Nagpur</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="header-center">
+      <!-- Role Toggle -->
+      <div class="role-toggle">
+        <button class="role-btn active" data-role="citizen" id="btn-role-citizen">
+          🏙️ Citizen
+        </button>
+        <button class="role-btn" data-role="police" id="btn-role-police">
+          🚔 Police
+        </button>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <!-- Connection Status -->
+      <div class="connection-badge disconnected" id="connection-badge">
+        <span class="connection-dot"></span>
+        <span class="connection-text">Checking…</span>
+      </div>
+
+      <!-- User Info -->
+      <div class="user-info">
+        <div class="user-avatar" id="user-avatar">--</div>
+        <span class="user-name" id="user-name">Not logged in</span>
+        <span class="user-role-badge" id="user-role-badge"></span>
+      </div>
+
+      <!-- Settings -->
+      <button class="btn btn-icon btn-ghost" id="btn-api-config" title="API Configuration">
+        ⚙️
+      </button>
+      <button class="btn btn-icon btn-ghost" id="btn-refresh" title="Refresh Data">
+        🔄
+      </button>
+    </div>
+  </header>
+
+
+  <!-- ═══ MAIN BODY ════════════════════════════════════ -->
+  <div class="app-body">
+
+    <!-- ─── CITIZEN SIDEBAR ──────────────────────────── -->
+    <aside class="sidebar" id="citizen-sidebar" style="display: flex;">
+      <div class="sidebar-header">
+        <div class="sidebar-title">
+          <span class="icon">🏙️</span> Citizen Portal
+        </div>
+      </div>
+
+      <div class="sidebar-content">
+        <!-- Quick Login -->
+        <div class="glass-card" style="margin-bottom: var(--space-md);">
+          <div class="card-title" style="margin-bottom: var(--space-sm);">
+            <span class="icon">🔐</span> Quick Demo Login
+          </div>
+          <div class="quick-login-btns">
+            <button class="btn btn-sm btn-ghost" id="btn-login-citizen" style="border-color: var(--role-citizen); color: var(--role-citizen);">
+              👤 Citizen
+            </button>
+            <button class="btn btn-sm btn-ghost" id="btn-login-police" style="border-color: var(--role-police); color: var(--role-police);">
+              👮 Police
+            </button>
+          </div>
+        </div>
+
+        <!-- Report Incident Form -->
+        <div class="glass-card">
+          <div class="card-title" style="margin-bottom: var(--space-md);">
+            <span class="icon">🚨</span> Report Incident
+          </div>
+
+          <div class="map-instruction">
+            📍 Click on the map to set incident location
+          </div>
+
+          <form id="incident-form" class="incident-form" style="padding: 0;">
+            <div class="form-group">
+              <label class="form-label" for="incident-type">Incident Type</label>
+              <select class="form-select" id="incident-type" required>
+                <option value="accident">🚗 Accident</option>
+                <option value="road_blocked">🚧 Road Blocked</option>
+                <option value="waterlogging">🌊 Waterlogging</option>
+                <option value="heavy_rain">🌧️ Heavy Rain</option>
+                <option value="heavy_congestion">🚦 Heavy Congestion</option>
+                <option value="traffic_violation">⚠️ Traffic Violation</option>
+                <option value="road_hazard">🔺 Road Hazard</option>
+                <option value="signal_failure">🔴 Signal Failure</option>
+                <option value="vehicle_breakdown">🛠️ Vehicle Breakdown</option>
+                <option value="road_damage">🕳️ Road Damage</option>
+                <option value="other">📋 Other</option>
+              </select>
+            </div>
+
+            <div class="coord-display">
+              <div class="form-group">
+                <label class="form-label" for="incident-lat">Latitude</label>
+                <input class="form-input" type="number" step="any" id="incident-lat" placeholder="21.1458" readonly />
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="incident-lng">Longitude</label>
+                <input class="form-input" type="number" step="any" id="incident-lng" placeholder="79.0882" readonly />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="incident-photo">Photo (optional)</label>
+              <input class="form-input" type="file" id="incident-photo" accept="image/jpeg,image/png,image/webp" />
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%;">
+              📤 Submit Incident Report
+            </button>
+          </form>
+        </div>
+
+        <!-- Junction Risk List -->
+        <div class="glass-card" style="margin-top: var(--space-md);">
+          <div class="card-title" style="margin-bottom: var(--space-md);">
+            <span class="icon">🗺️</span> Risk Hotspots
+          </div>
+          <div id="citizen-junction-list">
+            <div class="empty-state">
+              <div class="empty-state-icon">📡</div>
+              <div class="empty-state-text">Loading risk data…</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+
+    <!-- ─── POLICE SIDEBAR ───────────────────────────── -->
+    <aside class="sidebar" id="police-sidebar" style="display: none;">
+      <div class="sidebar-header">
+        <div class="sidebar-title">
+          <span class="icon">🚔</span> Police Operations
+        </div>
+      </div>
+
+      <div class="sidebar-content">
+        <!-- Quick Login -->
+        <div class="glass-card" style="margin-bottom: var(--space-md);">
+          <div class="card-title" style="margin-bottom: var(--space-sm);">
+            <span class="icon">🔐</span> Quick Demo Login
+          </div>
+          <div class="quick-login-btns">
+            <button class="btn btn-sm btn-ghost" onclick="autoLogin('citizen')" style="border-color: var(--role-citizen); color: var(--role-citizen);">
+              👤 Citizen
+            </button>
+            <button class="btn btn-sm btn-ghost" onclick="autoLogin('police')" style="border-color: var(--role-police); color: var(--role-police);">
+              👮 Police
+            </button>
+          </div>
+        </div>
+
+        <!-- Zone Summary Stats -->
+        <div class="glass-card" style="margin-bottom: var(--space-md);">
+          <div class="card-title" style="margin-bottom: var(--space-md);">
+            <span class="icon">📊</span> Command Overview
+          </div>
+          <div class="stats-grid" id="police-stats">
+            <div class="stat-item">
+              <div class="stat-label">Junctions</div>
+              <div class="stat-value" id="stat-total-junctions" style="color: var(--accent-blue);">--</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Critical</div>
+              <div class="stat-value" id="stat-critical" style="color: var(--risk-critical);">--</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">High Risk</div>
+              <div class="stat-value" id="stat-high" style="color: var(--risk-high);">--</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Avg Score</div>
+              <div class="stat-value" id="stat-avg-score" style="color: var(--risk-medium);">--</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Junction List -->
+        <div class="glass-card">
+          <div class="card-title" style="margin-bottom: var(--space-md);">
+            <span class="icon">🗺️</span> All Junctions
+          </div>
+          <div id="police-junction-list">
+            <div class="empty-state">
+              <div class="empty-state-icon">📡</div>
+              <div class="empty-state-text">Loading risk data…</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+
+    <!-- ─── MAP ──────────────────────────────────────── -->
+    <div class="map-container">
+      <div id="map"></div>
+
+      <!-- ─── DETAIL PANEL (slides in from right) ──── -->
+      <div class="detail-panel" id="detail-panel">
+        <div class="detail-panel-header">
+          <div class="detail-panel-title" id="detail-panel-title">Junction Detail</div>
+          <button class="detail-panel-close" id="detail-panel-close">✕</button>
+        </div>
+        <div class="detail-panel-content" id="detail-panel-body">
+          <!-- Populated dynamically -->
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /app-body -->
+
+</div><!-- /app -->
+
+
+<!-- ═══ TOAST CONTAINER ═══════════════════════════════ -->
+<div class="toast-container" id="toast-container"></div>
+
+
+<!-- ═══ API CONFIG MODAL ══════════════════════════════ -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-title">⚙️ API Configuration</div>
+    <div class="modal-subtitle">
+      Enter the backend API URL. This is where the NIRNAY FastAPI server is running.
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="api-url-input">Backend API URL</label>
+      <input class="form-input" type="url" id="api-url-input" placeholder="http://127.0.0.1:8000" />
+    </div>
+    <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: -8px;">
+      Examples: <code style="color:var(--accent-cyan);">http://127.0.0.1:8000</code> or a public ngrok/tunnel URL.
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeApiConfigModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveApiConfig()">💾 Save & Connect</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══ SCRIPTS ═══════════════════════════════════════ -->
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<!-- Chart.js (for trend graphs) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<!-- App JS -->
+<script src="app.js"></script>
+
+</body>
+</html>
